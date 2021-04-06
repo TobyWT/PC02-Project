@@ -7,7 +7,7 @@ class PongPaddle:
     """
     A class for a single paddle in the game of Pong
     """
-    def __init__(self, canvas: tkinter.Canvas, position: (int, int), size: (int, int)):
+    def __init__(self, canvas: tkinter.Canvas, position: (int, int), size: (int, int), speed):
         """
         Constructs the paddle. Has the following instance variables
         :var self.__canvas_reference: A reference to the canvas (so it can move the paddle up/down)
@@ -21,6 +21,7 @@ class PongPaddle:
         :param position: The starting position of the paddle
         :param size: The size of the paddle
         """
+        self.speed = speed
         self.__canvas_reference = canvas
         self.__position_x, self.__position_y = position
         self.__size_width, self.__size_length = size
@@ -32,6 +33,8 @@ class PongPaddle:
             self.__position_y + self.__size_length,
             fill="#FF0000"
         )
+        self.score = 0
+
         self.__vertical_direction = 0
         self.__speed = 150
 
@@ -49,13 +52,13 @@ class PongPaddle:
         """
         Starts moving the paddle upwards
         """
-        self.__vertical_direction = -1
+        self.__vertical_direction = -1 * self.speed
 
     def move_down(self):
         """
         Starts moving the paddle downwards
         """
-        self.__vertical_direction = 1
+        self.__vertical_direction = 1 * self.speed
 
     def stop_moving(self):
         """
@@ -106,6 +109,10 @@ class PongBall:
         directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
         self.__direction = random.choice(directions)
         self.__speed = 200
+
+    def accelerate(self):
+        self.__speed *= 1.05
+
 
     def get_canvas_id(self):
         """
@@ -173,9 +180,22 @@ class PongGame:
         self.__window.title("Pong")
         self.__canvas = tkinter.Canvas(self.__window, width=canvas_size[0], height=canvas_size[1], bg="#333333")
         self.__canvas.pack()
-        self.__paddle_1 = PongPaddle(self.__canvas, (40, int((canvas_size[1] // 2) - 50)), (20, 100))
-        self.__paddle_2 = PongPaddle(self.__canvas, (canvas_size[0] - 60, int((canvas_size[1] // 2) - 50)), (20, 100))
-        self.__ball = PongBall(self.__canvas, (395, 245), 10)
+        self.__paddle_1 = PongPaddle(self.__canvas, (40, int((canvas_size[1] // 2) - 50)), (20, 100), 2)
+        self.__paddle_2 = PongPaddle(self.__canvas, (canvas_size[0] - 60, int((canvas_size[1] // 2) - 50)), (20, 100), 1)
+        self.__ball = PongBall(self.__canvas, (395, 245), 20)
+        self.__window.bind("<KeyPress>", self.handle_move)
+
+    def handle_move(self, event):
+        key = event.keysym
+        key = key.upper()
+        if key == "W":
+            self.__paddle_1.move_up()
+        if key == "S":
+            self.__paddle_1.move_down()
+        if key == "UP":
+            self.__paddle_2.move_up()
+        if key == "DOWN":
+            self.__paddle_2.move_down()
 
     def reset_ball(self, paddle_winner: int) -> None:
         """
@@ -183,11 +203,19 @@ class PongGame:
         :param paddle_winner: The winner of that 'round' (1 for Player 1/left paddle and 2 for Player 2/right paddle)
         """
         self.__canvas.delete(self.__ball.get_canvas_id())
-        self.__ball = PongBall(self.__canvas, (395, 245), 10)
+        self.__ball = PongBall(self.__canvas, (395, 245), 20)
         if paddle_winner == 1:
-            pass
+            self.__paddle_1.score += 1
         elif paddle_winner == 2:
-            pass
+            self.__paddle_2.score += 1
+
+        if self.__paddle_1.score == 10 or self.__paddle_2.score == 10:
+            if self.__paddle_1.score > self.__paddle_2.score:
+                print("GameOver, PlayerOne won")
+            else:
+                print("GameOver, PlayerTwo one")
+
+        print("Player 2: " + str(self.__paddle_2.score) + ", Player 1: " + str(self.__paddle_1.score))
 
     def update(self) -> None:
         """
@@ -204,6 +232,7 @@ class PongGame:
         paddle_bounds = [self.__paddle_1.get_bounds(), self.__paddle_2.get_bounds()]
         if ball_bounds[1] <= 0 or ball_bounds[3] >= self.__canvas_size[1]:
             self.__ball.reverse_direction(False, True)
+            self.__ball.accelerate()
         for paddle_bound in paddle_bounds:
             if (ball_bounds[0] <= paddle_bound[2] and ball_bounds[2] >= paddle_bound[0]
                     and ball_bounds[1] <= paddle_bound[3] and ball_bounds[3] >= paddle_bound[1]):
