@@ -1,6 +1,8 @@
 class Node:
     def __init__(self):
-        pass
+        self.score = (2 ** 32) - 1
+        self.parent = None
+
 
 class Graph:
     def __init__(self, square_grid_size: int):
@@ -37,6 +39,30 @@ class Graph:
         start.score = 0
         end = self.nodes[end_index]
         later_list = [start]
+        while len(later_list) > 0:
+            current = later_list.pop(0)
+            current_index = self.nodes.index(current)
+            if current == end:
+                temp = end
+                path = [end]
+                while temp.parent is not None:
+                    temp = temp.parent
+                    path.insert(0, temp)
+                return path
+            for col_index in range(len(self.adjacency_matrix[current_index])):
+                if self.adjacency_matrix[current_index][col_index] == 1:
+                    adjacent = self.nodes[col_index]
+                    if adjacent.score > current.score + 1:
+                        adjacent.score = current.score + 1
+                        adjacent.parent = current
+                        insertion_index = 0
+                        while insertion_index < len(later_list):
+                            if later_list[insertion_index].score > adjacent.score:
+                                break
+                            else:
+                                insertion_index += 1
+                        later_list.insert(insertion_index, adjacent)
+
 
 
 dijkstra_graph = Graph(6)

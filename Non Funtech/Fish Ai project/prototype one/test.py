@@ -1,4 +1,4 @@
-import random
+"""import random
 
 
 class Fish:
@@ -24,3 +24,8 @@ class Offspring(Fish, Fish2):
         # only if you want single inheritance(more basic)
 
 #Offspring
+"""
+list1 = ["2"]
+list2 = ["1"]
+total_length = len(list1)
+print(total_length)
